@@ -71,30 +71,43 @@ export default function AttendancePage() {
   const fetchClasses = async () => {
     try {
       const res = await fetch('/api/classes')
+      if (!res.ok) {
+        throw new Error('반 목록을 불러오는데 실패했습니다')
+      }
       const data = await res.json()
-      setClasses(data)
-      if (data.length > 0) setSelectedClass(data[0].id.toString())
+      const classArray = Array.isArray(data) ? data : []
+      setClasses(classArray)
+      if (classArray.length > 0) setSelectedClass(classArray[0].id.toString())
     } catch (error) {
       console.error('반 목록을 불러오는데 실패했습니다:', error)
+      setClasses([])
     }
   }
 
   const fetchStudents = async () => {
     try {
       const res = await fetch(`/api/students?classId=${selectedClass}`)
+      if (!res.ok) {
+        throw new Error('학생 목록을 불러오는데 실패했습니다')
+      }
       const data = await res.json()
-      setStudents(data)
+      setStudents(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('학생 목록을 불러오는데 실패했습니다:', error)
+      setStudents([])
     }
   }
 
   const fetchAttendance = async () => {
     try {
       const res = await fetch(`/api/attendance?date=${selectedDate}&classId=${selectedClass}`)
+      if (!res.ok) {
+        throw new Error('출석 기록을 불러오는데 실패했습니다')
+      }
       const data = await res.json()
       const map: Record<number, string> = {}
-      data.forEach((a: any) => {
+      const attendanceArray = Array.isArray(data) ? data : []
+      attendanceArray.forEach((a: any) => {
         map[a.studentId] = a.status
       })
       setAttendanceMap(map)

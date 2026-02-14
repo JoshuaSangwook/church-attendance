@@ -48,10 +48,14 @@ export default function StatisticsPage() {
     setLoading(true)
     try {
       const res = await fetch(`/api/statistics?startDate=${startDate}&endDate=${endDate}`)
+      if (!res.ok) {
+        throw new Error('통계를 불러오는데 실패했습니다')
+      }
       const data = await res.json()
-      setStats(data.classStats)
+      setStats(data.classStats || [])
     } catch (error) {
       console.error('통계를 불러오는데 실패했습니다:', error)
+      setStats([])
     } finally {
       setLoading(false)
     }
@@ -60,10 +64,14 @@ export default function StatisticsPage() {
   const fetchWeeklyStats = async () => {
     try {
       const res = await fetch(`/api/statistics/weekly?startDate=${startDate}&endDate=${endDate}`)
+      if (!res.ok) {
+        throw new Error('주별 통계를 불러오는데 실패했습니다')
+      }
       const data = await res.json()
-      setWeeklyStats(data.weeklyStats)
+      setWeeklyStats(data.weeklyStats || [])
     } catch (error) {
       console.error('주별 통계를 불러오는데 실패했습니다:', error)
+      setWeeklyStats([])
     }
   }
 

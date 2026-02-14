@@ -51,10 +51,14 @@ export default function StudentsPage() {
   const fetchStudents = async () => {
     try {
       const res = await fetch('/api/students')
+      if (!res.ok) {
+        throw new Error('학생 목록을 불러오는데 실패했습니다')
+      }
       const data = await res.json()
-      setStudents(data)
+      setStudents(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('학생 목록을 불러오는데 실패했습니다:', error)
+      setStudents([])
     } finally {
       setLoading(false)
     }
@@ -63,10 +67,14 @@ export default function StudentsPage() {
   const fetchClasses = async () => {
     try {
       const res = await fetch('/api/classes')
+      if (!res.ok) {
+        throw new Error('반 목록을 불러오는데 실패했습니다')
+      }
       const data = await res.json()
-      setClasses(data)
+      setClasses(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('반 목록을 불러오는데 실패했습니다:', error)
+      setClasses([])
     }
   }
 

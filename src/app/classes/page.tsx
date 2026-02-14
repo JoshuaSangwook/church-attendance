@@ -37,10 +37,14 @@ export default function ClassesPage() {
   const fetchClasses = async () => {
     try {
       const res = await fetch('/api/classes')
+      if (!res.ok) {
+        throw new Error('반 목록을 불러오는데 실패했습니다')
+      }
       const data = await res.json()
-      setClasses(data)
+      setClasses(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('반 목록을 불러오는데 실패했습니다:', error)
+      setClasses([])
     } finally {
       setLoading(false)
     }
