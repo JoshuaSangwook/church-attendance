@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 반 모델
+model Class {
+  id        Int      @id @default(autoincrement())
+  name      String   // 예: 중1반, 중2반, 고1반
+  teacherName String  // 담당 선생님 이름
+  students  Student[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 학생 모델
+model Student {
+  id         Int           @id @default(autoincrement())
+  name       String
+  phone      String?
+  classId    Int
+  class      Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+// 출석 기록 모델
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime // 예배 날짜
+  status    String   // 출석 상태 (자유형태)
+  note      String? // 사유 (선택사항)
+  reason    String? // 결석/병결 사유
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, date]) // 같은 학생은 같은 날짜에 중복 출석 기록 불가
+}
