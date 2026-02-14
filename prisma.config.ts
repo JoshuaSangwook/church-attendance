@@ -8,7 +8,7 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DIRECT_URL"), // DATABASE_URL에서 DIRECT_URL로 변경
+    url: env("DATABASE_URL"), // DATABASE_URL에서 DIRECT_URL로 변경
   },
 });
 
