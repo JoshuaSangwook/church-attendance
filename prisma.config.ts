@@ -1,4 +1,5 @@
 import { defineConfig, env } from "prisma/config";
+import "dotenv/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -7,7 +8,7 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DATABASE_URL"),
+    url: env("DIRECT_URL"), // DATABASE_URL에서 DIRECT_URL로 변경
   },
 });
 
