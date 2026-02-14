@@ -48,13 +48,13 @@ export async function GET(request: Request) {
     })
 
     // 출석률 계산
-    const stats = classStats.map(cls => {
-      const totalAttendances = cls.students.reduce((sum, s) => sum + s.attendances.length, 0)
-      const presentCount = cls.students.reduce((sum, s) =>
-        sum + s.attendances.filter(a => a.status === 'PRESENT').length, 0
+    const stats = classStats.map((cls: any) => {
+      const totalAttendances = cls.students.reduce((sum: number, s: any) => sum + s.attendances.length, 0)
+      const presentCount = cls.students.reduce((sum: number, s: any) =>
+        sum + s.attendances.filter((a: any) => a.status === 'PRESENT').length, 0
       )
-      const absentCount = cls.students.reduce((sum, s) =>
-        sum + s.attendances.filter(a => a.status === 'ABSENT').length, 0
+      const absentCount = cls.students.reduce((sum: number, s: any) =>
+        sum + s.attendances.filter((a: any) => a.status === 'ABSENT').length, 0
       )
 
       return {
