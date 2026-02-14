@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     // 날짜별 그룹화 (주차 계산을 위함)
     const weeklyData: Record<string, { present: number; total: number }> = {}
 
-    attendances.forEach(a => {
+    attendances.forEach((a: any) => {
       const date = new Date(a.date)
       const year = date.getFullYear()
       const weekNumber = getWeekNumber(date)
