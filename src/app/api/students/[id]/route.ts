@@ -4,14 +4,15 @@ import { prisma } from '@/lib/prisma'
 // PUT - 학생 수정
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { name, phone, classId } = body
 
     const updatedStudent = await prisma.student.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       data: {
         name,
         phone: phone || null,
@@ -31,11 +32,12 @@ export async function PUT(
 // DELETE - 학생 삭제
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await prisma.student.delete({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     })
 
     return NextResponse.json({ success: true })
