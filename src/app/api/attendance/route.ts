@@ -33,8 +33,28 @@ export async function GET(request: Request) {
         date: 'desc'
       }
     })
-    return NextResponse.json(attendances)
+
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedAttendances = attendances.map(att => ({
+      ...att,
+      date: att.date.toISOString(),
+      createdAt: att.createdAt.toISOString(),
+      updatedAt: att.updatedAt.toISOString(),
+      student: att.student ? {
+        ...att.student,
+        createdAt: att.student.createdAt.toISOString(),
+        updatedAt: att.student.updatedAt.toISOString(),
+        class: att.student.class ? {
+          ...att.student.class,
+          createdAt: att.student.class.createdAt.toISOString(),
+          updatedAt: att.student.class.updatedAt.toISOString()
+        } : null
+      } : null
+    }))
+
+    return NextResponse.json(serializedAttendances)
   } catch (error) {
+    console.error('Error fetching attendances:', error)
     return NextResponse.json({ error: '출석 기록을 불러오는데 실패했습니다' }, { status: 500 })
   }
 }

@@ -16,8 +16,22 @@ export async function GET(request: Request) {
         name: 'asc'
       }
     })
-    return NextResponse.json(students)
+
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedStudents = students.map(student => ({
+      ...student,
+      createdAt: student.createdAt.toISOString(),
+      updatedAt: student.updatedAt.toISOString(),
+      class: student.class ? {
+        ...student.class,
+        createdAt: student.class.createdAt.toISOString(),
+        updatedAt: student.class.updatedAt.toISOString()
+      } : null
+    }))
+
+    return NextResponse.json(serializedStudents)
   } catch (error) {
+    console.error('Error fetching students:', error)
     return NextResponse.json({ error: '학생 목록을 불러오는데 실패했습니다' }, { status: 500 })
   }
 }

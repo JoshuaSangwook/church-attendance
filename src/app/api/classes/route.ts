@@ -14,8 +14,17 @@ export async function GET() {
         name: 'asc'
       }
     })
-    return NextResponse.json(classes)
+
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedClasses = classes.map(cls => ({
+      ...cls,
+      createdAt: cls.createdAt.toISOString(),
+      updatedAt: cls.updatedAt.toISOString()
+    }))
+
+    return NextResponse.json(serializedClasses)
   } catch (error) {
+    console.error('Error fetching classes:', error)
     return NextResponse.json({ error: '반 목록을 불러오는데 실패했습니다' }, { status: 500 })
   }
 }

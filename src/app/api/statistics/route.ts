@@ -70,10 +70,33 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json({
-      attendances,
-      classStats: stats
+      attendances: attendances.map(att => ({
+        ...att,
+        date: att.date.toISOString(),
+        createdAt: att.createdAt.toISOString(),
+        updatedAt: att.updatedAt.toISOString(),
+        student: att.student ? {
+          ...att.student,
+          createdAt: att.student.createdAt.toISOString(),
+          updatedAt: att.student.updatedAt.toISOString(),
+          class: att.student.class ? {
+            ...att.student.class,
+            createdAt: att.student.class.createdAt.toISOString(),
+            updatedAt: att.student.class.updatedAt.toISOString()
+          } : null
+        } : null
+      })),
+      classStats: stats.map((stat: any) => ({
+        ...stat,
+        class: stat.class ? {
+          ...stat.class,
+          createdAt: stat.class.createdAt.toISOString(),
+          updatedAt: stat.class.updatedAt.toISOString()
+        } : null
+      }))
     })
   } catch (error) {
+    console.error('Error fetching statistics:', error)
     return NextResponse.json({ error: '통계 데이터를 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
