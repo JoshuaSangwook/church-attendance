@@ -57,7 +57,19 @@ export async function POST(request: Request) {
       }
     })
 
-    return NextResponse.json(newStudent, { status: 201 })
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedStudent = {
+      ...newStudent,
+      createdAt: newStudent.createdAt.toISOString(),
+      updatedAt: newStudent.updatedAt.toISOString(),
+      class: newStudent.class ? {
+        ...newStudent.class,
+        createdAt: newStudent.class.createdAt.toISOString(),
+        updatedAt: newStudent.class.updatedAt.toISOString()
+      } : null
+    }
+
+    return NextResponse.json(serializedStudent, { status: 201 })
   } catch (error) {
     return NextResponse.json({ error: '학생 생성에 실패했습니다' }, { status: 500 })
   }

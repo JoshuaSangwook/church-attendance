@@ -4,7 +4,7 @@
 
 ## 프로젝트 개요
 
-Next.js 15, Prisma, SQLite로 구축된 교회 청소년부 출석 관리 시스템입니다. 반 관리, 학생 관리, 출석 체크, 통계 시각화 기능을 제공합니다.
+Next.js 16, Prisma, PostgreSQL로 구축된 교회 청소년부 출석 관리 시스템입니다. 반 관리, 학생 관리, 출석 체크, 통계 시각화 기능을 제공합니다.
 
 ## 주요 명령어
 
@@ -31,7 +31,7 @@ npx shadcn@latest add [component-name]  # 새 shadcn/ui 컴포넌트 추가
 
 ## 아키텍처
 
-### App Router 구조 (Next.js 15)
+### App Router 구조 (Next.js 16)
 ```
 src/app/
 ├── page.tsx              # 4개 주요 기능으로의 네비게이션 대시보드
@@ -48,7 +48,7 @@ src/app/
     └── statistics/       # 통계 생성
 ```
 
-### 데이터베이스 스키마 (Prisma + SQLite)
+### 데이터베이스 스키마 (Prisma + PostgreSQL)
 
 **세 개의 주요 모델:**
 
@@ -124,7 +124,8 @@ src/app/
 - Recharts를 사용한 시각화 차트:
   - 막대 그래프 (반별 출석)
   - 원형 차트 (전체 분포)
-- API: [api/statistics/route.ts](src/app/api/statistics/route.ts)
+- 주별 추이 분석
+- API: [api/statistics/route.ts](src/app/api/statistics/route.ts), [api/statistics/weekly/route.ts](src/app/api/statistics/weekly/route.ts)
 
 ## API 라우트 패턴
 
@@ -176,9 +177,9 @@ src/app/
 
 ## 기술 스택
 
-**프론트엔드**: Next.js 15, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, Recharts
+**프론트엔드**: Next.js 16, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, Recharts
 **백엔드**: Next.js API Routes, Prisma ORM
-**데이터베이스**: SQLite (개발용), PostgreSQL로 마이그레이션 용이
+**데이터베이스**: PostgreSQL (Supabase)
 **폼**: React Hook Form, Zod
 **아이콘**: Lucide React
 **폰트**: Geist Sans, Geist Mono (next/font로 최적화)

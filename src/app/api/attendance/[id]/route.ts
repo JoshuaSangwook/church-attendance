@@ -26,7 +26,25 @@ export async function PUT(
       }
     })
 
-    return NextResponse.json(updated)
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedAttendance = {
+      ...updated,
+      date: updated.date.toISOString(),
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+      student: updated.student ? {
+        ...updated.student,
+        createdAt: updated.student.createdAt.toISOString(),
+        updatedAt: updated.student.updatedAt.toISOString(),
+        class: updated.student.class ? {
+          ...updated.student.class,
+          createdAt: updated.student.class.createdAt.toISOString(),
+          updatedAt: updated.student.class.updatedAt.toISOString()
+        } : null
+      } : null
+    }
+
+    return NextResponse.json(serializedAttendance)
   } catch (error) {
     return NextResponse.json({ error: '출석 기록 수정에 실패했습니다' }, { status: 500 })
   }

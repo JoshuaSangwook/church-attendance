@@ -46,7 +46,14 @@ export async function POST(request: Request) {
       }
     })
 
-    return NextResponse.json(newClass, { status: 201 })
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedClass = {
+      ...newClass,
+      createdAt: newClass.createdAt.toISOString(),
+      updatedAt: newClass.updatedAt.toISOString()
+    }
+
+    return NextResponse.json(serializedClass, { status: 201 })
   } catch (error) {
     return NextResponse.json({ error: '반 생성에 실패했습니다' }, { status: 500 })
   }

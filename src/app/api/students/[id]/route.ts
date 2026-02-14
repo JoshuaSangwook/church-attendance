@@ -23,7 +23,19 @@ export async function PUT(
       }
     })
 
-    return NextResponse.json(updatedStudent)
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedStudent = {
+      ...updatedStudent,
+      createdAt: updatedStudent.createdAt.toISOString(),
+      updatedAt: updatedStudent.updatedAt.toISOString(),
+      class: updatedStudent.class ? {
+        ...updatedStudent.class,
+        createdAt: updatedStudent.class.createdAt.toISOString(),
+        updatedAt: updatedStudent.class.updatedAt.toISOString()
+      } : null
+    }
+
+    return NextResponse.json(serializedStudent)
   } catch (error) {
     return NextResponse.json({ error: '학생 수정에 실패했습니다' }, { status: 500 })
   }

@@ -19,7 +19,14 @@ export async function PUT(
       }
     })
 
-    return NextResponse.json(updatedClass)
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedClass = {
+      ...updatedClass,
+      createdAt: updatedClass.createdAt.toISOString(),
+      updatedAt: updatedClass.updatedAt.toISOString()
+    }
+
+    return NextResponse.json(serializedClass)
   } catch (error) {
     return NextResponse.json({ error: '반 수정에 실패했습니다' }, { status: 500 })
   }

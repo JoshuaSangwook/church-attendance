@@ -95,7 +95,25 @@ export async function POST(request: Request) {
       }
     })
 
-    return NextResponse.json(attendance)
+    // 직렬화를 위해 JSON 직렬화 가능한 형태로 변환
+    const serializedAttendance = {
+      ...attendance,
+      date: attendance.date.toISOString(),
+      createdAt: attendance.createdAt.toISOString(),
+      updatedAt: attendance.updatedAt.toISOString(),
+      student: attendance.student ? {
+        ...attendance.student,
+        createdAt: attendance.student.createdAt.toISOString(),
+        updatedAt: attendance.student.updatedAt.toISOString(),
+        class: attendance.student.class ? {
+          ...attendance.student.class,
+          createdAt: attendance.student.class.createdAt.toISOString(),
+          updatedAt: attendance.student.class.updatedAt.toISOString()
+        } : null
+      } : null
+    }
+
+    return NextResponse.json(serializedAttendance)
   } catch (error) {
     return NextResponse.json({ error: '출석 기록 생성에 실패했습니다' }, { status: 500 })
   }
