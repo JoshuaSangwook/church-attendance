@@ -30,6 +30,7 @@ export default function AttendancePage() {
   const [attendanceMap, setAttendanceMap] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [dateError, setDateError] = useState<string>('')
 
   useEffect(() => {
     fetchClasses()
@@ -51,14 +52,70 @@ export default function AttendancePage() {
     return date.getDay() === 0
   }
 
+  // 가장 가까운 일요일 찾기
+  function getNearestSunday(dateString: string): string {
+    const date = new Date(dateString)
+    const dayOfWeek = date.getDay()
+    const daysUntilSunday = (7 - dayOfWeek) % 7
+    const nearestSunday = new Date(date)
+    nearestSunday.setDate(date.getDate() + daysUntilSunday)
+    return nearestSunday.toISOString().split('T')[0]
+  }
+
   // 날짜 변경 핸들러
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = e.target.value
     if (isSunday(newDate)) {
       setSelectedDate(newDate)
+      setDateError('')
     } else {
-      alert('일요일만 선택할 수 있습니다.')
+      const nearestSunday = getNearestSunday(newDate)
+      setDateError(`${newDate}는(은) 일요일이 아닙니다. ${nearestSunday} (일요일)로 선택하시겠습니까?`)
+      // 사용자가 명시적으로 선택할 수 있도록 일요일로 자동 변경하지 않음
     }
+  }
+
+  // 가장 가까운 일요일로 선택
+  const selectNearestSunday = () => {
+    const nearestSunday = getNearestSunday(selectedDate)
+    setSelectedDate(nearestSunday)
+    setDateError('')
+  }
+
+  // 이전 일요일로 이동
+  const goToPreviousSunday = () => {
+    const currentDate = new Date(selectedDate)
+    currentDate.setDate(currentDate.getDate() - 7)
+    setSelectedDate(currentDate.toISOString().split('T')[0])
+    setDateError('')
+  }
+
+  // 다음 일요일로 이동
+  const goToNextSunday = () => {
+    const currentDate = new Date(selectedDate)
+    currentDate.setDate(currentDate.getDate() + 7)
+    setSelectedDate(currentDate.toISOString().split('T')[0])
+    setDateError('')
+  }
+
+  // 최근 일요일들 계산 (최근 8주)
+  const getRecentSundays = (): string[] => {
+    const sundays: string[] = []
+    const today = new Date()
+    const dayOfWeek = today.getDay()
+
+    // 이번 주 일요일 찾기
+    const thisSunday = new Date(today)
+    thisSunday.setDate(today.getDate() + ((7 - dayOfWeek) % 7))
+
+    // 최근 8주의 일요일들 계산
+    for (let i = 0; i < 8; i++) {
+      const sunday = new Date(thisSunday)
+      sunday.setDate(thisSunday.getDate() - (i * 7))
+      sundays.push(sunday.toISOString().split('T')[0])
+    }
+
+    return sundays
   }
 
   useEffect(() => {
@@ -167,13 +224,66 @@ export default function AttendancePage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label htmlFor="date">날짜 (일요일)</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={goToPreviousSunday}
+                    variant="outline"
+                    size="sm"
+                    className="px-3"
+                  >
+                    ←
+                  </Button>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={handleDateChange}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={goToNextSunday}
+                    variant="outline"
+                    size="sm"
+                    className="px-3"
+                  >
+                    →
+                  </Button>
+                </div>
+                <div className="mt-2">
+                  <Label htmlFor="recent-sundays" className="text-xs text-gray-600">
+                    빠른 선택
+                  </Label>
+                  <select
+                    id="recent-sundays"
+                    value={selectedDate}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value)
+                      setDateError('')
+                    }}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1"
+                  >
+                    <option value="" disabled>최근 일요일 선택</option>
+                    {getRecentSundays().map(date => (
+                      <option key={date} value={date}>
+                        {date} {date === getNextSunday() ? '(다음 일요일)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <p className="text-xs text-gray-500 mt-1">* 일요일만 선택 가능</p>
+                {dateError && (
+                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <p className="text-sm text-amber-800">{dateError}</p>
+                    <Button
+                      onClick={selectNearestSunday}
+                      size="sm"
+                      variant="outline"
+                      className="mt-2 text-xs"
+                    >
+                      가장 가까운 일요일로 선택
+                    </Button>
+                  </div>
+                )}
               </div>
               <div>
                 <Label htmlFor="class">반</Label>
