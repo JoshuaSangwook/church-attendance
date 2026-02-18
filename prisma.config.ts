@@ -1,5 +1,22 @@
 import { defineConfig, env } from "prisma/config";
 import "dotenv/config";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+
+// .env.local 파일에서 환경변수 로드
+const envPath = resolve(process.cwd(), ".env.local");
+try {
+  const envFile = readFileSync(envPath, "utf-8");
+  envFile.split("\n").forEach((line) => {
+    const [key, ...values] = line.split("=");
+    if (key && !key.startsWith("#") && values.length > 0) {
+      const value = values.join("=").trim().replace(/^"|"$/g, "");
+      process.env[key] = value;
+    }
+  });
+} catch (e) {
+  console.warn(".env.local 파일을 찾을 수 없습니다.");
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -8,10 +25,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DATABASE_URL"), // DATABASE_URL에서 DIRECT_URL로 변경
+    url: env("DATABASE_URL"),
   },
 });
-
-// 주의: .env 파일에 비밀번호가 포함되어 있어서 git에 올라지지 않습니다
-// 로컬 개발 시: .env 사용 (Direct URL - IPv4)
-// Vercel 배포 시: .env.vercel 사용 (Transaction Pooler URL - IPv6)
