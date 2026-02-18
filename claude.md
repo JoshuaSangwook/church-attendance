@@ -16,12 +16,23 @@ npm run start        # 프로덕션 서버 시작
 npm run lint         # ESLint 실행
 ```
 
+### Docker (로컬 데이터베이스)
+```bash
+npm run docker:up    # Docker PostgreSQL 컨테이너 시작
+npm run docker:down  # Docker 컨테이너 중지
+npm run docker:logs  # PostgreSQL 로그 확인
+npm run docker:reset # 데이터베이스 초기화 (볼륨 삭제 후 재시작)
+```
+
 ### 데이터베이스
 ```bash
 npx prisma generate   # 스키마 변경 후 Prisma Client 생성
 npx prisma migrate dev # 마이그레이션 생성 및 적용
 npx prisma studio     # Prisma Studio로 데이터 조회/편집
 npx prisma db push    # 스키마 변경사항 즉시 반영 (개발 전용)
+npm run db:push       # 스키마 변경사항 즉시 반영 (npm script)
+npm run db:migrate    # 마이그레이션 실행 (npm script)
+npm run db:studio     # Prisma Studio 실행 (npm script)
 ```
 
 ### UI 컴포넌트 추가
@@ -158,11 +169,31 @@ src/app/
 
 ## 개발 참고사항
 
+### 데이터베이스 환경
+
+이 프로젝트는 환경에 따라 다른 데이터베이스를 사용합니다:
+
+- **로컬 개발**: Docker PostgreSQL (localhost:5432)
+  - 설정 파일: `.env.local`
+  - 컨테이너 이름: `church-attendance-db`
+  - 데이터베이스: `church_attendance`
+  - 시작: `npm run docker:up`
+
+- **프로덕션**: Supabase PostgreSQL (클라우드)
+  - 설정 파일: `.env.production`
+  - Transaction Pooler 사용 (Vercel 배포 최적화)
+
 ### 데이터베이스 변경 워크플로우
 1. [prisma/schema.prisma](prisma/schema.prisma) 수정
-2. `npx prisma migrate dev --name [설명]` 실행
-3. 또는 개발용: `npx prisma db push`
+2. `npm run db:push` 실행 (로컬 개발용)
+3. 또는 `npm run db:migrate` 실행 (마이그레이션 파일 생성)
 4. Prisma Client 자동 생성
+
+### Prisma Config
+
+위치: [prisma.config.ts](prisma.config.ts)
+
+이 파일은 `.env.local` 파일을 명시적으로 로드하여 로컬 개발 환경에서 Docker PostgreSQL에 연결합니다.
 
 ### 새 기능 추가
 1. `src/app/[feature]/page.tsx`에 페이지 생성
@@ -179,10 +210,13 @@ src/app/
 
 **프론트엔드**: Next.js 16, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, Recharts
 **백엔드**: Next.js API Routes, Prisma ORM
-**데이터베이스**: PostgreSQL (Supabase)
+**데이터베이스**:
+- 로컬: Docker PostgreSQL
+- 프로덕션: Supabase PostgreSQL (Transaction Pooler)
 **폼**: React Hook Form, Zod
 **아이콘**: Lucide React
 **폰트**: Geist Sans, Geist Mono (next/font로 최적화)
+**컨테이너**: Docker Compose (로컬 개발용)
 
 ## 프로젝트 구조 (상위 레벨)
 
