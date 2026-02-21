@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,10 +39,11 @@ export default function StatisticsPage() {
   )
   const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0])
 
+  // 초기 로딩 시에만 자동 조회
   useEffect(() => {
     fetchStatistics()
     fetchWeeklyStats()
-  }, [startDate, endDate])
+  }, [])
 
   const fetchStatistics = async () => {
     setLoading(true)
@@ -72,6 +74,12 @@ export default function StatisticsPage() {
       console.error('주별 통계를 불러오는데 실패했습니다:', error)
       setWeeklyStats([])
     }
+  }
+
+  // 조회 버튼 클릭 핸들러
+  const handleFetch = () => {
+    fetchStatistics()
+    fetchWeeklyStats()
   }
 
   const chartData = stats.map(stat => ({
@@ -111,7 +119,7 @@ export default function StatisticsPage() {
             <CardDescription className="text-sm">통계를 확인할 기간을 선택하세요</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 mb-4">
               <div>
                 <Label htmlFor="startDate">시작일</Label>
                 <Input
@@ -131,6 +139,9 @@ export default function StatisticsPage() {
                 />
               </div>
             </div>
+            <Button onClick={handleFetch} disabled={loading} className="w-full">
+              {loading ? '조회 중...' : '조회'}
+            </Button>
           </CardContent>
         </Card>
 
