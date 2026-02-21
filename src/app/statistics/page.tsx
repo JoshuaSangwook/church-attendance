@@ -7,6 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+
+interface AttendanceLog {
+  date: string
+  studentName: string
+  className: string
+  status: string
+  note: string
+  isQuietTimeDone: boolean
+}
 
 interface ClassStats {
   class: {
@@ -33,6 +43,7 @@ const COLORS = ['#22c55e', '#ef4444']
 export default function StatisticsPage() {
   const [stats, setStats] = useState<ClassStats[]>([])
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats[]>([])
+  const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>([])
   const [loading, setLoading] = useState(true)
   const [startDate, setStartDate] = useState<string>(
     new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -43,6 +54,7 @@ export default function StatisticsPage() {
   useEffect(() => {
     fetchStatistics()
     fetchWeeklyStats()
+    fetchAttendanceLogs()
   }, [])
 
   const fetchStatistics = async () => {
@@ -76,10 +88,25 @@ export default function StatisticsPage() {
     }
   }
 
+  const fetchAttendanceLogs = async () => {
+    try {
+      const res = await fetch(`/api/attendance/daily?startDate=${startDate}&endDate=${endDate}`)
+      if (!res.ok) {
+        throw new Error('출석 일지를 불러오는데 실패했습니다')
+      }
+      const data = await res.json()
+      setAttendanceLogs(data.logs || [])
+    } catch (error) {
+      console.error('출석 일지를 불러오는데 실패했습니다:', error)
+      setAttendanceLogs([])
+    }
+  }
+
   // 조회 버튼 클릭 핸들러
   const handleFetch = () => {
     fetchStatistics()
     fetchWeeklyStats()
+    fetchAttendanceLogs()
   }
 
   const chartData = stats.map(stat => ({
@@ -317,6 +344,65 @@ export default function StatisticsPage() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">출석 일지</CardTitle>
+            <CardDescription className="text-sm">기간 내 출석 기록 상세 내역</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {attendanceLogs.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">출석 일지가 없습니다</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-24">날짜</TableHead>
+                      <TableHead>학생</TableHead>
+                      <TableHead>반</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>내용 (Note)</TableHead>
+                      <TableHead className="w-16 text-center">큐티</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {attendanceLogs.map((log, index) => (
+                      <TableRow key={`${log.date}-${log.studentName}-${index}`}>
+                        <TableCell className="text-sm">{log.date}</TableCell>
+                        <TableCell className="font-medium">{log.studentName}</TableCell>
+                        <TableCell className="text-sm text-gray-600">{log.className}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                              log.status === 'PRESENT'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {log.status === 'PRESENT' ? '출석' : '결석'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-700 max-w-48 truncate" title={log.note}>
+                          {log.note || '-'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {log.status === 'ABSENT' ? (
+                            <span className="text-gray-400">-</span>
+                          ) : log.isQuietTimeDone ? (
+                            <span className="text-green-600 font-medium">✓</span>
+                          ) : (
+                            <span className="text-red-500 font-medium">✗</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

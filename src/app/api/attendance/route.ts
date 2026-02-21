@@ -63,7 +63,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { studentId, date, status, note } = body
+    const { studentId, date, status, note, isQuietTimeDone } = body
 
     if (!studentId || !date || !status) {
       return NextResponse.json({ error: '필수 정보가 누락되었습니다' }, { status: 400 })
@@ -78,13 +78,15 @@ export async function POST(request: Request) {
       },
       update: {
         status,
-        note: note || null
+        note: note || null,
+        isQuietTimeDone: isQuietTimeDone ?? false
       },
       create: {
         studentId: parseInt(studentId),
         date: new Date(date),
         status,
-        note: note || null
+        note: note || null,
+        isQuietTimeDone: isQuietTimeDone ?? false
       },
       include: {
         student: {

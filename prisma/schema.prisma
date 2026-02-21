@@ -34,15 +34,15 @@ model Student {
 
 // 출석 기록 모델
 model Attendance {
-  id        Int      @id @default(autoincrement())
-  studentId Int
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  date      DateTime // 예배 날짜
-  status    String   // 출석 상태 (자유형태)
-  note      String? // 사유 (선택사항)
-  reason    String? // 결석/병결 사유
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date            DateTime // 예배 날짜
+  status          String   // 출석 상태 (자유형태)
+  note            String?  // 기도제목 또는 결석 사유
+  isQuietTimeDone Boolean? @default(false) // 큐티 완료 여부
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([studentId, date]) // 같은 학생은 같은 날짜에 중복 출석 기록 불가
 }
