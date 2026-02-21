@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface Student {
   id: number
@@ -22,12 +24,20 @@ interface Class {
   name: string
 }
 
+interface AttendanceData {
+  status: string
+  note: string
+  isQuietTimeDone: boolean
+}
+
 export default function AttendancePage() {
   const [classes, setClasses] = useState<Class[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [selectedClass, setSelectedClass] = useState<string>('')
   const [selectedDate, setSelectedDate] = useState<string>(getNextSunday())
   const [attendanceMap, setAttendanceMap] = useState<Record<number, string>>({})
+  const [noteMap, setNoteMap] = useState<Record<number, string>>({})
+  const [quietTimeMap, setQuietTimeMap] = useState<Record<number, boolean>>({})
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [dateError, setDateError] = useState<string>('')
@@ -162,12 +172,18 @@ export default function AttendancePage() {
         throw new Error('출석 기록을 불러오는데 실패했습니다')
       }
       const data = await res.json()
-      const map: Record<number, string> = {}
+      const statusMap: Record<number, string> = {}
+      const noteMap: Record<number, string> = {}
+      const quietTimeMap: Record<number, boolean> = {}
       const attendanceArray = Array.isArray(data) ? data : []
       attendanceArray.forEach((a: any) => {
-        map[a.studentId] = a.status
+        statusMap[a.studentId] = a.status
+        noteMap[a.studentId] = a.note || ''
+        quietTimeMap[a.studentId] = a.isQuietTimeDone || false
       })
-      setAttendanceMap(map)
+      setAttendanceMap(statusMap)
+      setNoteMap(noteMap)
+      setQuietTimeMap(quietTimeMap)
     } catch (error) {
       console.error('출석 기록을 불러오는데 실패했습니다:', error)
     }
@@ -175,6 +191,16 @@ export default function AttendancePage() {
 
   const handleAttendanceChange = (studentId: number, status: string) => {
     setAttendanceMap(prev => ({ ...prev, [studentId]: status }))
+    setSaved(false)
+  }
+
+  const handleNoteChange = (studentId: number, note: string) => {
+    setNoteMap(prev => ({ ...prev, [studentId]: note }))
+    setSaved(false)
+  }
+
+  const handleQuietTimeChange = (studentId: number, checked: boolean) => {
+    setQuietTimeMap(prev => ({ ...prev, [studentId]: checked }))
     setSaved(false)
   }
 
@@ -188,7 +214,9 @@ export default function AttendancePage() {
           body: JSON.stringify({
             studentId: student.id,
             date: selectedDate,
-            status: attendanceMap[student.id] || 'ABSENT'
+            status: attendanceMap[student.id] || 'ABSENT',
+            note: noteMap[student.id] || '',
+            isQuietTimeDone: quietTimeMap[student.id] || false
           })
         })
       )
@@ -340,6 +368,7 @@ export default function AttendancePage() {
                   <CardContent className="p-0">
                     <div className="bg-gray-50 px-4 py-3 border-b">
                       <h3 className="font-semibold text-lg">{student.name}</h3>
+                      <p className="text-sm text-gray-600">{student.class.name}</p>
                     </div>
                     <div className="grid grid-cols-2 divide-x">
                       <button
@@ -372,6 +401,33 @@ export default function AttendancePage() {
                           결석
                         </div>
                       </button>
+                    </div>
+                    <div className="p-4 space-y-3 border-t">
+                      <div>
+                        <Label htmlFor={`note-${student.id}`} className="text-sm text-gray-700">
+                          Note (기도제목/결석사유)
+                        </Label>
+                        <Textarea
+                          id={`note-${student.id}`}
+                          placeholder="기도제목 또는 결석 사유를 입력하세요"
+                          value={noteMap[student.id] || ''}
+                          onChange={(e) => handleNoteChange(student.id, e.target.value)}
+                          className="mt-1 min-h-16 resize-none"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`quiet-${student.id}`}
+                          checked={quietTimeMap[student.id] || false}
+                          onCheckedChange={(checked) => handleQuietTimeChange(student.id, checked === true)}
+                        />
+                        <Label
+                          htmlFor={`quiet-${student.id}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          큐티 완료
+                        </Label>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
