@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -146,12 +145,23 @@ export default function StatisticsPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-xs md:text-sm font-medium text-gray-600">총 출석 기록</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium text-gray-600">출석</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl md:text-3xl font-bold">{stats.reduce((sum, s) => sum + s.totalAttendances, 0)}건</div>
+              <div className="text-2xl md:text-3xl font-bold text-green-600">{stats.reduce((sum, s) => sum + s.presentCount, 0)}건</div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xs md:text-sm font-medium text-gray-600">결석</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl md:text-3xl font-bold text-red-600">{stats.reduce((sum, s) => sum + s.absentCount, 0)}건</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 mb-6 md:gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="text-xs md:text-sm font-medium text-gray-600">평균 출석률</CardTitle>
@@ -162,6 +172,14 @@ export default function StatisticsPage() {
                   ? Math.round(stats.reduce((sum, s) => sum + s.attendanceRate, 0) / stats.length)
                   : 0}%
               </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xs md:text-sm font-medium text-gray-600">총 출석 기록</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl md:text-3xl font-bold">{stats.reduce((sum, s) => sum + s.totalAttendances, 0)}건</div>
             </CardContent>
           </Card>
         </div>

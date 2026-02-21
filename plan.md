@@ -1,11 +1,11 @@
-# 로컬 개발 환경 Docker PostgreSQL 구축 계획
+# 통계 화면 출석 수 계산 오류 해결 계획
 
 ## 메타데이터
 
-- **이슈 번호**: #2
-- **이슈 제목**: 개선: 로컬 개발 환경에 Docker PostgreSQL 추가
-- **브랜치**: feature/local-docker-postgresql
-- **시작일**: 2026-02-15
+- **이슈 번호**: #4
+- **이슈 제목**: Bug: 통계 화면 출석 수 계산 오류
+- **브랜치**: (미정)
+- **시작일**: 2026-02-19
 - **상태**: 🔄 진행 중
 
 ---
@@ -13,308 +13,194 @@
 ## 문제 분석
 
 ### 현재 문제점
-1. **데이터 분리 부족**: 로컬 개발과 프로덕션이 같은 Supabase 데이터베이스 사용
-2. **테스트 데이터 관리 어려움**: 개발 중 자유로운 테스트 데이터 생성/삭제 불가
-3. **프로덕션 데이터 위험**: 개발 중 실수로 실제 데이터를 삭제/수정할 위험
-4. **개발 효율성 저하**: 안전하게 테스트하기 어려운 환경
 
-### 해결 방안
-Docker로 로컬 PostgreSQL 환경 구축하여 개발 데이터와 프로덕션 데이터 분리
+**테스트 조건**: 2026년 2월 15일 (시작일 = 종료일)
+- **총 출석 기록**: 68건
+- **실제 출석 수**: 46명
+- **차이**: 22건
+
+### 원인 분석
+
+#### 1. Prisma Schema 확인 ([prisma/schema.prisma:41](prisma/schema.prisma:41))
+```prisma
+status    String   // 출석 상태 (자유형태)
+```
+- `status`가 **String 타입**으로 정의됨 (Enum이 아님!)
+- 즉, 제약조건 없이 어떤 문자열이든 저장 가능
+
+#### 2. 출석 체크 페이지 저장 값 확인 ([src/app/attendance/page.tsx](src/app/attendance/page.tsx:346-374))
+```typescript
+// 출석 버튼 클릭 시
+onClick={() => handleAttendanceChange(student.id, 'PRESENT')}
+// 결석 버튼 클릭 시
+onClick={() => handleAttendanceChange(student.id, 'ABSENT')}
+```
+- **대문자**로 저장: `'PRESENT'`, `'ABSENT'`
+
+#### 3. 통계 API 필터링 로직 ([src/app/api/statistics/route.ts:53-58](src/app/api/statistics/route.ts:53-58))
+```typescript
+const presentCount = cls.students.reduce((sum: number, s: any) =>
+  sum + s.attendances.filter((a: any) => a.status === 'PRESENT').length, 0
+)
+const absentCount = cls.students.reduce((sum: number, s: any) =>
+  sum + s.attendances.filter((a: any) => a.status === 'ABSENT').length, 0
+)
+```
+- `'PRESENT'`와 `'ABSENT'`만 필터링
+- **다른 상태값이 있으면 카운트되지 않음!**
+
+### 결론
+
+68건 중 46건만 카운트된 이유:
+- **68건** = 전체 출석 기록
+- **46건** = PRESENT 또는 ABSENT 상태
+- **22건** = 다른 상태값 (예: 소문자로 저장된 값, 빈 문자열, null 등)
 
 ---
 
 ## 실행 목록
 
-### 1. Docker 환경 설정 ✅
-- [x] `docker-compose.yml` 파일 작성
-- [x] `.dockerignore` 파일 작성
-- [x] `package.json`에 Docker 관련 스크립트 추가
+### 1. 데이터 검증 🔍
+- [x] 실제 데이터베이스에서 2/15 출석 기록의 status 값 확인
+- [x] 어떤 상태값들이 실제로 저장되어 있는지 확인
+- [x] 문제 분석: 데이터는 정확함 (PRESENT 46건 + ABSENT 22건 = 68건)
+- [x] UI 개선: 출석/결석 건수를 명확하게 표시하도록 수정
 
-### 2. 환경변수 설정 ✅
-- [x] `.env.example` 파일 작성 (환경변수 템플릿)
-- [x] `.env.local` 수정 (로컬 Docker DB 연결)
-- [x] `.env.production` 수정 (Supabase 프로덕션 연결)
-- [x] `prisma.config.ts` 수정 (.env.local 로드)
-- [x] `.gitignore` 확인 (환경변수 파일 보안)
+### 2. Prisma Schema 개선 📝
+- [ ] String 타입을 Enum으로 변경
+- [ ] Enum 값 정의: `PRESENT`, `ABSENT`, `SICK` (병결)
+- [ ] 마이그레이션 생성 및 실행
 
-### 3. Prisma 설정 ✅
-- [x] Prisma Schema 확인 (기존 설정 호환성 체크)
-- [x] 마이그레이션 실행 (db:push)
-- [ ] 시드(Seed) 데이터 스크립트 작성 (선택사항)
+### 3. 데이터 마이그레이션 🔄
+- [ ] 기존 데이터의 status 값 표준화
+- [ ] 소문자/빈 값 등을 올바른 Enum 값으로 변환
+- [ ] 데이터 무결성 확인
 
-### 4. 개발 가이드 문서화 ✅
-- [x] README.md에 Docker 사용법 추가
-- [x] CLAUDE.md에 환경 설정 내용 업데이트
-- [x] 로컬 개발 환경 설정 가이드 작성
+### 4. 통계 API 수정 🔧
+- [ ] `src/app/api/statistics/route.ts` 수정
+- [ ] 모든 상태값(PRESENT, ABSENT, SICK) 올바르게 카운트
+- [ ] 통계 화면에 병결(SICK) 표시 추가
 
-### 5. 테스트 ✅
-- [x] Docker 컨테이너 시작 테스트
-- [x] 로컬 DB 연결 테스트
-- [x] Prisma 마이그레이션 테스트
-- [x] 개발 서버 실행 테스트
-- [x] API 동작 테스트 (반 생성, 학생 생성, 출석 기록)
-- [x] 데이터 조회 테스트
+### 5. 통계 화면 UI 수정 🎨
+- [ ] `src/app/statistics/page.tsx` 수정
+- [ ] 출석/결석/병결 3가지 상태 표시
+- [ ] 차트에 병결 데이터 추가
+- [ ] 원형 차트에 3가지 상태 표시
 
-### 6. 문서 정리
-- [ ] plan.md를 `plan_issue2_로컬_Docker_PostgreSQL_YYYYMMDD.md`로 백업
-- [ ] Git 커밋 및 푸시
-- [ ] PR(Pull Request) 생성
+### 6. 출석 체크 화면 개선 ✨ (선택사항)
+- [ ] 병결 버튼 추가
+- [ ] 3가지 상태(출석/결석/병결) 선택 가능
+
+### 7. 테스트 ✅
+- [ ] 기존 데이터로 통계 정확성 검증
+- [ ] 새로운 출석 기록 생성 후 통계 확인
+- [ ] 모든 상태값이 올바르게 카운트되는지 확인
+
+### 8. 문서 업데이트 📚
+- [ ] README.md에 출석 상태 설명 추가
+- [ ] CLAUDE.md에 상태값 관련 내용 추가
 
 ---
 
 ## 상세 구현 내용
 
-### 1. Docker Compose 설정
-
-**파일**: `docker-compose.yml`
-
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: church-attendance-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: church_attendance
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
-    driver: local
-```
-
-**설명**:
-- PostgreSQL 16 Alpine 이미지 사용 (가볍고 빠름)
-- 포트 5432 매핑 (로컬에서 5432로 접근)
-- 영구 저장소 볼륨 설정 (데이터 유지)
-- 헬스체크 설정 (컨테이너 상태 모니터링)
-
-### 2. 환경변수 설정
-
-**`.env.local`** (로컬 개발용):
-```bash
-# Docker PostgreSQL (로컬 개발용)
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/church_attendance"
-```
-
-**`.env.production`** (프로덕션용):
-```bash
-# Supabase (프로덕션용)
-DATABASE_URL="postgresql://postgres.fmfmwjzxtimzwtutmwmu:PASSWORD@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true&prepared_statements=false"
-```
-
-**`.env.example`** (템플릿):
-```bash
-# 데이터베이스 연결 URL
-DATABASE_URL="postgresql://user:password@host:port/database"
-
-# 로컬 개발 (Docker)
-# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/church_attendance"
-
-# 프로덕션 (Supabase)
-# DATABASE_URL="postgresql://postgres:password@host:port/postgres"
-```
-
-### 3. package.json 스크립트
-
-**추가할 스크립트**:
-
-```json
-{
-  "scripts": {
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f postgres",
-    "docker:reset": "docker-compose down -v && docker-compose up -d",
-    "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio",
-    "dev": "npm run docker:up && next dev"
-  }
-}
-```
-
-**스크립트 설명**:
-- `docker:up`: Docker 컨테이너 시작
-- `docker:down`: Docker 컨테이너 중지
-- `docker:logs`: PostgreSQL 로그 확인
-- `docker:reset`: 데이터베이스 초기화 (볼륨 삭제 후 재시작)
-- `db:migrate`: Prisma 마이그레이션 실행
-- `db:seed`: 시드 데이터 삽입
-- `db:studio`: Prisma Studio 실행 (DB GUI)
-- `dev`: Docker 시작 후 개발 서버 실행
-
-### 4. .dockerignore
-
-**파일**: `.dockerignore`
-
-```
-node_modules
-.next
-.git
-.env.local
-.env.production
-*.md
-```
-
-### 5. 시드 데이터 (선택사항)
-
-**파일**: `prisma/seed.ts`
-
-```typescript
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
-async function main() {
-  // 테스트용 반 데이터 생성
-  await prisma.class.createMany({
-    data: [
-      { name: '중1반', teacherName: '김선생님' },
-      { name: '중2반', teacherName: '이선생님' },
-      { name: '고1반', teacherName: '박선생님' },
-    ]
-  })
-
-  // 테스트용 학생 데이터 생성
-  const classes = await prisma.class.findMany()
-
-  for (const cls of classes) {
-    await prisma.student.createMany({
-      data: [
-        { name: '테스트학생1', classId: cls.id },
-        { name: '테스트학생2', classId: cls.id },
-      ]
-    })
-  }
-
-  console.log('시드 데이터가 생성되었습니다.')
-}
-
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
-```
-
----
-
-## 개발 단계
-
-### 단계 1: 기본 설정 ✅
-1. Docker Compose 파일 작성
-2. 환경변수 파일 설정
-3. package.json 스크립트 추가
-
-### 단계 2: 데이터베이스 설정
-1. Docker 컨테이너 시작
-2. Prisma 마이그레이션 실행
-3. 테이블 생성 확인
-
-### 단계 3: 테스트
-1. 개발 서버 실행
-2. API 동작 테스트
-3. 데이터 생성/삭제 테스트
-
-### 단계 4: 문서화
-1. README.md 업데이트
-2. 개발 가이드 작성
-3. PR 생성
-
----
-
-## 사용법 (구현 후)
-
-### 개발 환경 시작
+### Phase 1: 데이터 검증
 
 ```bash
-# 1. Docker 컨테이너 시작
-npm run docker:up
-
-# 2. 데이터베이스 마이그레이션
-npm run db:migrate
-
-# 3. 시드 데이터 삽입 (선택사항)
-npm run db:seed
-
-# 4. 개발 서버 시작
-npm run dev
-```
-
-### 데이터베이스 관리
-
-```bash
-# Prisma Studio (DB GUI)
+# Prisma Studio로 데이터 확인
 npm run db:studio
 
-# 데이터베이스 초기화
-npm run docker:reset
-npm run db:migrate
-npm run db:seed
+# 또는 직접 쿼리
+npm run db:push  # 마이그레이션 후
 ```
 
-### 컨테이너 관리
+확인해야 할 것:
+- `status` 필드에 어떤 값들이 있는지?
+- 중복된 값이 있는지? (예: 'present', 'PRESENT' 동시 존재)
 
-```bash
-# 로그 확인
-npm run docker:logs
+### Phase 2: Schema 수정
 
-# 컨테이너 중지
-npm run docker:down
-
-# 컨테이너 재시작
-npm run docker:down && npm run docker:up
+**수정 전:**
+```prisma
+model Attendance {
+  ...
+  status    String   // 출석 상태 (자유형태)
+  ...
+}
 ```
+
+**수정 후:**
+```prisma
+enum AttendanceStatus {
+  PRESENT   // 출석
+  ABSENT    // 결석
+  SICK      // 병결
+}
+
+model Attendance {
+  ...
+  status    AttendanceStatus   @default(ABSENT)
+  ...
+}
+```
+
+### Phase 3: 데이터 마이그레이션
+
+기존 데이터 정리 스크립트 필요:
+- 소문자 → 대문자
+- 빈 값/null → ABSENT (기본값)
+- 기타 예외값 처리
+
+### Phase 4: API 수정
+
+현재 로직:
+```typescript
+const presentCount = ...filter(a => a.status === 'PRESENT').length
+const absentCount = ...filter(a => a.status === 'ABSENT').length
+```
+
+수정 후:
+```typescript
+const presentCount = ...filter(a => a.status === 'PRESENT').length
+const absentCount = ...filter(a => a.status === 'ABSENT').length
+const sickCount = ...filter(a => a.status === 'SICK').length  // 추가
+```
+
+### Phase 5: UI 수정
+
+**카드 추가:**
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>병결</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div>{sickCount}건</div>
+  </CardContent>
+</Card>
+```
+
+**차트 수정:**
+- 3가지 색상: 초록(출석), 빨강(결석), 노랑(병결)
 
 ---
 
-## 참고 사항
+## 주의사항
 
-### 장점
-- ✅ 로컬 개발 데이터와 프로덕션 데이터 완전 분리
-- ✅ 자유로운 테스트 데이터 생성 및 삭제
-- ✅ 프로덕션 데이터 안전성 확보
-- ✅ 오프라인 개발 환경 지원
-- ✅ 일관된 개발 환경 (팀 전체가 동일한 Docker 설정 사용)
-
-### 주의사항
-- `.env.local`과 `.env.production`을 혼동하지 않기
-- 프로덕션 배포 시 `.env.production` 사용 확인
-- Docker 볼륨 데이터 정기 백업 (로컬 개발 데이터 보존 필요 시)
-- 포트 5432가 이미 사용 중인지 확인
-
-### 트러블슈팅
-
-**문제**: 컨테이너가 시작하지 않음
-- **해결**: `npm run docker:logs`로 로그 확인, 포트 충돌 확인
-
-**문제**: 데이터베이스 연결 실패
-- **해결**: Docker 컨테이너 실행 중인지 확인, `DATABASE_URL` 확인
-
-**문제**: 마이그레이션 실패
-- **해결**: `npm run docker:reset`으로 데이터베이스 초기화
+1. **데이터 백업**: 마이그레이션 전 반드시 데이터베이스 백업
+2. **기존 데이터 호환성**: String → Enum 변경 시 기존 데이터 처리 필수
+3. **API 응답 형식**: 변경 시 프론트엔드도 함께 수정
+4. **테스트**: 실제 데이터로 검증 후 배포
 
 ---
 
-## 다음 단계
+## 진행 상황
 
-1. ✅ Docker Compose 설정 작성
-2. ✅ 환경변수 파일 구성
-3. ✅ package.json 스크립트 추가
-4. ✅ 테스트 및 검증
-5. ✅ 문서화
-6. ✅ PR 생성 및 머지
+- [ ] Phase 1: 데이터 검증
+- [ ] Phase 2: Schema 수정
+- [ ] Phase 3: 데이터 마이그레이션
+- [ ] Phase 4: API 수정
+- [ ] Phase 5: UI 수정
+- [ ] Phase 6: 출석 체크 화면 개선 (선택)
+- [ ] Phase 7: 테스트
+- [ ] Phase 8: 문서 업데이트
