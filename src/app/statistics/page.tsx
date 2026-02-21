@@ -350,10 +350,10 @@ export default function StatisticsPage() {
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="text-lg">출석 일지</CardTitle>
-            <CardDescription className="text-sm">기간 내 출석 기록 상세 내역</CardDescription>
+            <CardDescription className="text-sm">기간 내 Note가 있는 출석 기록 상세 내역</CardDescription>
           </CardHeader>
           <CardContent>
-            {attendanceLogs.length === 0 ? (
+            {attendanceLogs.filter(log => log.note).length === 0 ? (
               <p className="text-center text-gray-500 py-8">출석 일지가 없습니다</p>
             ) : (
               <div className="overflow-x-auto">
@@ -365,11 +365,10 @@ export default function StatisticsPage() {
                       <TableHead>반</TableHead>
                       <TableHead>상태</TableHead>
                       <TableHead>내용 (Note)</TableHead>
-                      <TableHead className="w-16 text-center">큐티</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {attendanceLogs.map((log, index) => (
+                    {attendanceLogs.filter(log => log.note).map((log, index) => (
                       <TableRow key={`${log.date}-${log.studentName}-${index}`}>
                         <TableCell className="text-sm">{log.date}</TableCell>
                         <TableCell className="font-medium">{log.studentName}</TableCell>
@@ -385,17 +384,8 @@ export default function StatisticsPage() {
                             {log.status === 'PRESENT' ? '출석' : '결석'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-700 max-w-48 truncate" title={log.note}>
-                          {log.note || '-'}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {log.status === 'ABSENT' ? (
-                            <span className="text-gray-400">-</span>
-                          ) : log.isQuietTimeDone ? (
-                            <span className="text-green-600 font-medium">✓</span>
-                          ) : (
-                            <span className="text-red-500 font-medium">✗</span>
-                          )}
+                        <TableCell className="text-sm text-gray-700" title={log.note}>
+                          {log.note}
                         </TableCell>
                       </TableRow>
                     ))}
